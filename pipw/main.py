@@ -1,6 +1,6 @@
 from collections import namedtuple, OrderedDict
 import os
-from os.path import join
+from os.path import dirname
 import pkg_resources
 from pkg_resources import RequirementParseError, DistributionNotFound
 import re
@@ -8,10 +8,7 @@ import sys
 import subprocess
 
 import click
-
-default_config = {
-    'default_file': join(os.getcwd(), 'requirements.txt'),
-}
+import yaml
 
 Package = namedtuple('Package', [
     'editable', 'name_or_url', 'version', 'installed_version', 'etc',
@@ -26,7 +23,8 @@ class Requirements(object):
         ('etc', '(?P<etc>(?: +[#;\-]+[^\n]+)?\n?)'),
     ])
 
-    def __init__(self, filepath):
+    def __init__(self, config, filepath):
+        self.config = config
         self.filepath = filepath
         self.buffer = ''
 
@@ -49,7 +47,7 @@ class Requirements(object):
         if package.version:
             line += package.version
         elif package.installed_version:
-            line += '~=' + package.installed_version
+            line += self.config['specifier'] + package.installed_version
 
         if package.etc:
             line += package.etc
@@ -63,7 +61,7 @@ class Requirements(object):
             return None
 
     def save_installed_packages(self, packages):
-        self._read()
+        self.read()
 
         for package in packages:
             package = self.parse_package(package)
@@ -71,7 +69,7 @@ class Requirements(object):
             if not found:
                 self._add_package(package)
 
-        self._write()
+        self.write()
 
     def _update_package(self, package):
         pattern = '^{}{}{}{}$'.format(
@@ -95,7 +93,7 @@ class Requirements(object):
         for i in range(len(lines)):
             line = lines[i].strip()
 
-            # Add after firsts "-"
+            # Add after first "-" group
             if package.editable:
                 if line.startswith('-'):
                     add_to_index = i + 1
@@ -119,23 +117,45 @@ class Requirements(object):
         lines.insert(add_to_index, self.make_line(package))
         self.buffer = '\n'.join(lines)
 
-    def _read(self):
+    def read(self):
+        filedir = dirname(self.filepath)
+        if filedir and not os.path.exists(filedir):
+            os.makedirs(filedir)
+
         mode = 'r'
         if not os.path.exists(self.filepath):
             mode = 'w+'
 
-        with open(self.filepath, mode) as f:
-            self.buffer = f.read()
+        with open(self.filepath, mode) as stream:
+            self.buffer = stream.read()
 
-    def _write(self):
-        with open(self.filepath, 'w+') as f:
-            f.write(self.buffer)
+    def write(self):
+        with open(self.filepath, 'w+') as stream:
+            stream.write(self.buffer)
+
+
+def init_config():
+    config = {
+        'requirements': 'requirements.txt',
+        'specifier': '~=',
+    }
+
+    filepath = '.pipwrc'
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as stream:
+            custom_config = yaml.safe_load(stream)
+            if not isinstance(custom_config, dict):
+                exit('Invalid .pipwrc')
+            config.update(custom_config)
+
+    return config
 
 
 @click.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument('pip_args', nargs=-1, type=click.UNPROCESSED)
 @click.option('--save/--no-save', default=True)
 def cli(pip_args, save):
+    config = init_config()
     command = pip_args[0]
     pip_args = pip_args[1:]
     pip_output = subprocess.call(['pip', command] + list(pip_args))
@@ -153,20 +173,15 @@ def cli(pip_args, save):
     for arg in pip_args:
         if arg in ['-e', '--editable']:
             packages.append('-e ' + next(pip_args))
-
-        if arg in ['-i', '--index-url']:
+        elif arg in ['-i', '--index-url']:
             index_url = next(pip_args)
-
-        if arg == '--extra-index-url':
+        elif arg == '--extra-index-url':
             extra_index_url = next(pip_args)
-
-        if arg in ['-f', '--find-links']:
+        elif arg in ['-f', '--find-links']:
             find_links = next(pip_args)
-
-        if arg == '--no-index':
+        elif arg == '--no-index':
             no_index = True
-
-        if arg in ['-r', '--requirements']:
+        elif arg in ['-r', '--requirements']:
             next(pip_args)
 
         if arg.startswith('-'):
@@ -177,13 +192,9 @@ def cli(pip_args, save):
     if not packages:
         return
 
-    req = Requirements(default_config['default_file'])
+    req = Requirements(config, config['requirements'])
     req.save_installed_packages(packages)
 
 
-def main():
-    cli()
-
-
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(cli())
