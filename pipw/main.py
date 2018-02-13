@@ -102,6 +102,8 @@ class Requirements(object):
                 continue
 
             if not line or line.startswith(('#', '-')):
+                if line.startswith('-') and not add_to_index:
+                    add_to_index = i + 1
                 continue
 
             buffer_package = self.parse_package(line)
@@ -134,19 +136,24 @@ class Requirements(object):
             stream.write(self.buffer)
 
 
-def init_config():
+def init_config(config_path):
     config = {
         'requirements': 'requirements.txt',
         'specifier': '~=',
     }
 
     filepath = '.pipwrc'
+    if config_path:
+        filepath = config_path
+
     if os.path.exists(filepath):
         with open(filepath, 'r') as stream:
             custom_config = yaml.safe_load(stream)
             if not isinstance(custom_config, dict):
                 exit('Invalid .pipwrc')
             config.update(custom_config)
+    elif config_path:
+        exit('Config file `{}` not found'.format(config_path))
 
     return config
 
@@ -154,8 +161,9 @@ def init_config():
 @click.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument('pip_args', nargs=-1, type=click.UNPROCESSED)
 @click.option('--save/--no-save', default=True)
-def cli(pip_args, save):
-    config = init_config()
+@click.option('--config', default=None)
+def cli(pip_args, save, config):
+    config = init_config(config)
     command = pip_args[0]
     pip_args = pip_args[1:]
     pip_output = subprocess.call(['pip', command] + list(pip_args))
