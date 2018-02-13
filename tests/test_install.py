@@ -1,14 +1,10 @@
 from tests.factories.packages import PkgDistributionFactory
-from tests.utils import invoke_cli
-
-def _test_requirements_snapshot(tmpdir, snapshot):
-    output = tmpdir.join('requirements.txt').read()
-    snapshot.assert_match(output)
+from tests.utils import invoke_cli, check_requirements_snapshot
 
 
 def test_install_add_requirements(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install mylib mylib2', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_update_requirements(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
@@ -19,12 +15,12 @@ def test_install_update_requirements(monkeypatch, tmpdir, mock_pip, config_file,
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory(version='2.0.0'))
     invoke_cli('install mylib mylib2', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_add_requirements_alphabetically(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install c a b', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_add_editables_at_start_or_after_first_hyphen_group(tmpdir, mock_pip, config_file, snapshot):
@@ -32,7 +28,7 @@ def test_install_add_editables_at_start_or_after_first_hyphen_group(tmpdir, mock
     invoke_cli('install -e editable1', config_file)
     invoke_cli('install b', config_file)
     invoke_cli('install --editable editable2', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_add_requirement_after_multiline(tmpdir, mock_pip, config_file, snapshot):
@@ -40,7 +36,7 @@ def test_install_add_requirement_after_multiline(tmpdir, mock_pip, config_file, 
     requirements_file.write('a==1.0 --hash=abc\\\n--hash=abc')
 
     invoke_cli('install b', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_keep_comments(tmpdir, mock_pip, config_file, snapshot):
@@ -48,7 +44,7 @@ def test_install_keep_comments(tmpdir, mock_pip, config_file, snapshot):
     requirements_file.write('a # Comment\n# Comment\nc=1.0')
 
     invoke_cli('install a b', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_keep_etc(tmpdir, mock_pip, config_file, snapshot):
@@ -56,12 +52,12 @@ def test_install_keep_etc(tmpdir, mock_pip, config_file, snapshot):
     requirements_file.write('a ; --hash=abc')
 
     invoke_cli('install a', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_add_requirement_with_specified_version(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install mylib==3.0.5', config_file)
-    _test_requirements_snapshot(tmpdir, snapshot)
+    check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_no_save(tmpdir, mock_pip, config_file, snapshot):

@@ -8,4 +8,11 @@ def invoke_cli(commands, config_file):
         commands = commands.split()
     runner = CliRunner()
     commands += ['--config', config_file.strpath]
-    runner.invoke(cli, commands)
+    return runner.invoke(cli, commands)
+
+
+def check_requirements_snapshot(tmpdir, snapshot, requirements_path=None):
+    if not requirements_path:
+        requirements_path = tmpdir.join('requirements.txt')
+    output = requirements_path.read()
+    snapshot.assert_match(output)

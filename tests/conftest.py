@@ -3,6 +3,7 @@ import pkg_resources
 import subprocess
 
 import pytest
+import yaml
 
 from tests.factories.packages import PkgDistributionFactory
 
@@ -20,16 +21,11 @@ def config_file(tmpdir, config=None):
     if config is None:
         config = {}
 
+    if not config.get('requirements', None):
+        config['requirements'] = tmpdir.join('requirements.txt').strpath
+
+    output = yaml.dump(config)
     file_ = tmpdir.join('.pipwrc')
-
-    requirements = config.get('requirements', None)
-    specifier = config.get('specifier', None)
-
-    if not requirements:
-        requirements = tmpdir.join('requirements.txt').strpath
-    file_.write('requirements: {}'.format(requirements))
-
-    if specifier:
-        file_.write('specifier: {}'.format(specifier))
+    file_.write(output)
 
     return file_
