@@ -42,3 +42,6 @@ snapshots['test_install_add_requirement_with_specified_version 1'] = '''mylib==3
 '''
 
 snapshots['test_install_update_requirement_with_specified_version 1'] = 'a>=3.0.0'
+
+snapshots['test_install_save_mutually_exclusive_error 1'] = '''--save and --no-save options are mutually exclusive
+'''

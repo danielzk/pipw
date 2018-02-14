@@ -84,3 +84,8 @@ def test_install_no_save_if_no_packages(tmpdir, mock_pip, config_file, snapshot)
     invoke_cli('install -r test', config_file)
     requirements_exists = tmpdir.join('requirements.txt').check()
     assert not requirements_exists
+
+
+def test_install_save_mutually_exclusive_error(tmpdir, config_file, snapshot):
+    result = invoke_cli('install a --save --no-save', config_file)
+    snapshot.assert_match(result.output)
