@@ -45,3 +45,18 @@ snapshots['test_install_update_requirement_with_specified_version 1'] = 'a>=3.0.
 
 snapshots['test_install_save_mutually_exclusive_error 1'] = '''--save and --no-save options are mutually exclusive
 '''
+
+snapshots['test_install_add_extra_index_url 1'] = '''--extra-index-url https://index.url
+--extra-index-url https://index.url2
+a~=1.0.0
+'''
+
+snapshots['test_install_not_repeat_extra_index_url 1'] = '''--extra-index-url https://index.url
+a~=1.0.0
+'''
+
+snapshots['test_install_set_index_url 1'] = '''-i https://index.url
+a~=1.0.0
+'''
+
+snapshots['test_install_set_index_url 2'] = '-i https://index.url2'

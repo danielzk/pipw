@@ -89,3 +89,21 @@ def test_install_no_save_if_no_packages(tmpdir, mock_pip, config_file, snapshot)
 def test_install_save_mutually_exclusive_error(tmpdir, config_file, snapshot):
     result = invoke_cli('install a --save --no-save', config_file)
     snapshot.assert_match(result.output)
+
+
+def test_install_set_index_url(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a -i https://index.url', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+    invoke_cli('install a --index-url https://index.url2', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_extra_index_url(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a --extra-index-url https://index.url,https://index.url2', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_not_repeat_extra_index_url(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a --extra-index-url https://index.url', config_file)
+    invoke_cli('install a --extra-index-url https://index.url', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
