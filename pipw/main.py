@@ -136,7 +136,7 @@ class Requirements(object):
             stream.write(self.buffer)
 
 
-def init_config(config_path):
+def init_config(config_path=None):
     config = {
         'requirements': 'requirements.txt',
         'specifier': '~=',
@@ -153,16 +153,21 @@ def init_config(config_path):
                 exit('Invalid .pipwrc')
             config.update(custom_config)
     elif config_path:
-        exit('Config file `{}` not found'.format(config_path))
+        exit('Config file "{}" not found'.format(config_path))
 
     return config
 
 
 @click.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument('pip_args', nargs=-1, type=click.UNPROCESSED)
-@click.option('--save/--no-save', default=True)
-@click.option('--config', default=None)
-def cli(pip_args, save, config):
+@click.option('--save', '-s', default=False, is_flag=True)
+@click.option('--no-save', '-n', default=False, is_flag=True)
+@click.option('--config', '-c', default=None, metavar='<path>')
+def cli(pip_args, save, no_save, config):
+    if save and no_save:
+        exit('--save and --no-save options are mutually exclusive')
+
+    save = not no_save
     config = init_config(config)
     command = pip_args[0]
     pip_args = pip_args[1:]
