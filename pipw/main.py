@@ -158,11 +158,20 @@ def init_config(config_path=None):
     return config
 
 
+helps = {
+    'save': 'Save packages to the requirements file. This is default unless ' +
+            '--no-save. Packages are saved in requirements.txt unless a ' +
+            'custom configuration is used.',
+    'no_save': 'Prevent save packages to the requirements file.',
+    'config': 'Pass a custom config file. By default it looks for a .pipwrc ' +
+              'file in the directory where the command is executed.',
+}
+
 @click.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument('pip_args', nargs=-1, type=click.UNPROCESSED)
-@click.option('--save', '-s', default=False, is_flag=True)
-@click.option('--no-save', '-n', default=False, is_flag=True)
-@click.option('--config', '-c', default=None, metavar='<path>')
+@click.option('--save', '-s', default=False, help=helps['save'], is_flag=True)
+@click.option('--no-save', '-n', default=False, help=helps['no_save'], is_flag=True)
+@click.option('--config', '-c', default=None, help=helps['config'], metavar='<path>')
 def cli(pip_args, save, no_save, config):
     if save and no_save:
         exit('--save and --no-save options are mutually exclusive')
