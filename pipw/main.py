@@ -98,6 +98,15 @@ class Requirements(object):
         if not found:
             self._add_option(option, url)
 
+    def save_no_index(self):
+        if self.buffer is None:
+            self.read()
+
+        option = 'no_index'
+        found = self._search_option(option)
+        if not found:
+            self._add_option(option)
+
     def _update_package(self, package):
         pattern = '^{}{}{}{}$'.format(
             self.patterns['editable'],
@@ -146,14 +155,13 @@ class Requirements(object):
         lines.insert(add_to_index, self.make_line(package))
         self.buffer = '\n'.join(lines)
 
-    def _search_option(self, option, value=None):
-        value_pattern = ''
+    def _search_option(self, option, value=''):
         if value:
-            value_pattern = ' {}'.format(value)
+            value = ' {}'.format(value)
 
         pattern = '^(?:{}){}{}$'.format(
             '|'.join(PIP_OPTIONS[option]),
-            value_pattern,
+            value,
             self.patterns['etc'],
         )
         return re.search(pattern, self.buffer, flags=re.MULTILINE)
@@ -171,7 +179,7 @@ class Requirements(object):
         )
         return found
 
-    def _add_option(self, option, value=None):
+    def _add_option(self, option, value=''):
         lines = self.buffer.split('\n')
 
         add_to_index = 0
@@ -275,7 +283,7 @@ def cli(pip_args, save, no_save, config):
             extra_index_urls = next(pip_args).split(',')
         elif arg in PIP_OPTIONS['find_links']:
             find_links = next(pip_args)
-        elif arg == PIP_OPTIONS['no_index']:
+        elif arg in PIP_OPTIONS['no_index']:
             no_index = True
         elif arg in PIP_OPTIONS['requirements']:
             # Skip requirements argument
@@ -297,6 +305,9 @@ def cli(pip_args, save, no_save, config):
 
     if extra_index_urls:
         req.save_extra_index_urls(extra_index_urls)
+
+    if no_index:
+        req.save_no_index()
 
     req.write()
 
