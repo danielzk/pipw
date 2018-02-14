@@ -10,6 +10,15 @@ import subprocess
 import click
 import yaml
 
+PIP_OPTIONS = {
+    'editable': ['-e', '--editable'],
+    'index_url': ['-i', '--index-url'],
+    'extra_index_url': ['--extra-index-url'],
+    'find_links': ['-f', '--find-links'],
+    'no_index': ['--no-index'],
+    'requirements': ['-r', '--requirements'],
+}
+
 Package = namedtuple('Package', [
     'editable', 'name_or_url', 'version', 'installed_version', 'etc',
 ])
@@ -26,7 +35,7 @@ class Requirements(object):
     def __init__(self, config, filepath):
         self.config = config
         self.filepath = filepath
-        self.buffer = ''
+        self.buffer = None
 
     def parse_package(self, package):
         pattern = '^{}$'.format(''.join(self.patterns.values()))
@@ -61,7 +70,8 @@ class Requirements(object):
             return None
 
     def save_installed_packages(self, packages):
-        self.read()
+        if self.buffer is None:
+            self.read()
 
         for package in packages:
             package = self.parse_package(package)
@@ -69,7 +79,24 @@ class Requirements(object):
             if not found:
                 self._add_package(package)
 
-        self.write()
+    def save_extra_index_urls(self, urls):
+        if self.buffer is None:
+            self.read()
+
+        option = 'extra_index_url'
+        for url in urls:
+            found = self._search_option(option, url)
+            if not found:
+                self._add_option(option, url)
+
+    def save_index_url(self, url):
+        if self.buffer is None:
+            self.read()
+
+        option = 'index_url'
+        found = self._update_option(option, url)
+        if not found:
+            self._add_option(option, url)
 
     def _update_package(self, package):
         pattern = '^{}{}{}{}$'.format(
@@ -117,6 +144,49 @@ class Requirements(object):
             add_to_index += 1
 
         lines.insert(add_to_index, self.make_line(package))
+        self.buffer = '\n'.join(lines)
+
+    def _search_option(self, option, value=None):
+        value_pattern = ''
+        if value:
+            value_pattern = ' {}'.format(value)
+
+        pattern = '^(?:{}){}{}$'.format(
+            '|'.join(PIP_OPTIONS[option]),
+            value_pattern,
+            self.patterns['etc'],
+        )
+        return re.search(pattern, self.buffer, flags=re.MULTILINE)
+
+    def _update_option(self, option, value):
+        pattern = '^(?P<option>{}) [^ ]+{}$'.format(
+            '|'.join(PIP_OPTIONS[option]),
+            self.patterns['etc'],
+        )
+        self.buffer, found = re.subn(
+            pattern,
+            '\g<option> {}\g<etc>'.format(value),
+            self.buffer,
+            flags=re.MULTILINE,
+        )
+        return found
+
+    def _add_option(self, option, value=None):
+        lines = self.buffer.split('\n')
+
+        add_to_index = 0
+        lines_indices = iter(range(len(lines)))
+        for i in lines_indices:
+            line = lines[i].strip()
+            if line.startswith('-'):
+                add_to_index = i + 1
+                while lines[add_to_index - 1].endswith('\\'):
+                    add_to_index += 1
+                    next(lines_indices)
+                break
+
+        new_line = '{} {}'.format(PIP_OPTIONS[option][0], value).strip()
+        lines.insert(add_to_index, new_line)
         self.buffer = '\n'.join(lines)
 
     def read(self):
@@ -191,23 +261,24 @@ def cli(pip_args, save, no_save, config):
 
     packages = []
     index_url = None
-    extra_index_url = None
+    extra_index_urls = None
     find_links = None
     no_index = False
 
     pip_args = iter(pip_args)
     for arg in pip_args:
-        if arg in ['-e', '--editable']:
+        if arg in PIP_OPTIONS['editable']:
             packages.append('-e ' + next(pip_args))
-        elif arg in ['-i', '--index-url']:
+        elif arg in PIP_OPTIONS['index_url']:
             index_url = next(pip_args)
-        elif arg == '--extra-index-url':
-            extra_index_url = next(pip_args)
-        elif arg in ['-f', '--find-links']:
+        elif arg in PIP_OPTIONS['extra_index_url']:
+            extra_index_urls = next(pip_args).split(',')
+        elif arg in PIP_OPTIONS['find_links']:
             find_links = next(pip_args)
-        elif arg == '--no-index':
+        elif arg == PIP_OPTIONS['no_index']:
             no_index = True
-        elif arg in ['-r', '--requirements']:
+        elif arg in PIP_OPTIONS['requirements']:
+            # Skip requirements argument
             next(pip_args)
 
         if arg.startswith('-'):
@@ -220,6 +291,14 @@ def cli(pip_args, save, no_save, config):
 
     req = Requirements(config, config['requirements'])
     req.save_installed_packages(packages)
+
+    if index_url:
+        req.save_index_url(index_url)
+
+    if extra_index_urls:
+        req.save_extra_index_urls(extra_index_urls)
+
+    req.write()
 
 
 if __name__ == '__main__':
