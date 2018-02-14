@@ -18,8 +18,8 @@ Package = namedtuple('Package', [
 class Requirements(object):
     patterns = OrderedDict([
         ('editable', '(?P<editable>-e )?'),
-        ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|!=|~=).)+)'),
-        ('version', '(?P<version>(?:==|>|<|!=|~=| )+[^\n;#\-]*\d)?'),
+        ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|>=|<=|!=|~=).)+)'),
+        ('version', '(?P<version>(?: *(?:==|>|<|>=|<=|!=|~=) *[^\n ]+)+)?'),
         ('etc', '(?P<etc>(?: +[#;\-]+[^\n]+)?\n?)'),
     ])
 

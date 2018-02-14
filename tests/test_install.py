@@ -49,14 +49,21 @@ def test_install_keep_comments(tmpdir, mock_pip, config_file, snapshot):
 
 def test_install_keep_etc(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('a ; --hash=abc')
+    requirements_file.write('a ; --hash=abc\nb==0.0.1 ; --hash=abc\nc >= 1.1, == 1.*')
 
-    invoke_cli('install a', config_file)
+    invoke_cli('install a b c==3.0.0', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_add_requirement_with_specified_version(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install mylib==3.0.5', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_update_requirement_with_specified_version(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a >= 1.1, == 1.*')
+    invoke_cli('install a>=3.0.0', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 

@@ -34,7 +34,11 @@ b~=1.0.0
 # Comment
 c=1.0'''
 
-snapshots['test_install_keep_etc 1'] = 'a~=1.0.0 ; --hash=abc'
+snapshots['test_install_keep_etc 1'] = '''a~=1.0.0 ; --hash=abc
+b~=1.0.0 ; --hash=abc
+c==3.0.0'''
 
 snapshots['test_install_add_requirement_with_specified_version 1'] = '''mylib==3.0.5
 '''
+
+snapshots['test_install_update_requirement_with_specified_version 1'] = 'a>=3.0.0'
