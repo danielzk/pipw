@@ -107,3 +107,14 @@ def test_install_not_repeat_extra_index_url(tmpdir, mock_pip, config_file, snaps
     invoke_cli('install a --extra-index-url https://index.url', config_file)
     invoke_cli('install a --extra-index-url https://index.url', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_no_index(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a --no-index', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_not_repeat_no_index(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a --no-index', config_file)
+    invoke_cli('install a --no-index', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)

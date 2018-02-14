@@ -60,3 +60,11 @@ a~=1.0.0
 '''
 
 snapshots['test_install_set_index_url 2'] = '-i https://index.url2'
+
+snapshots['test_install_add_no_index 1'] = '''--no-index
+a~=1.0.0
+'''
+
+snapshots['test_install_not_repeat_no_index 1'] = '''--no-index
+a~=1.0.0
+'''
