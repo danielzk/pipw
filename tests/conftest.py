@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from tests.factories.packages import PkgDistributionFactory
+from tests.utils import raise_distribution_not_found
 
 
 @pytest.fixture(scope='function')
@@ -14,6 +15,13 @@ def mock_pip(monkeypatch):
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory())
+
+
+@pytest.fixture(scope='function')
+def mock_pkg_dist_not_found(monkeypatch):
+    monkeypatch.setattr(
+        'pkg_resources.get_distribution',
+        raise_distribution_not_found)
 
 
 @pytest.fixture(scope='function')
