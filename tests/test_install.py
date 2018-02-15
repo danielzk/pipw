@@ -3,18 +3,18 @@ from tests.utils import invoke_cli, check_requirements_snapshot
 
 
 def test_install_add_requirements(tmpdir, mock_pip, config_file, snapshot):
-    invoke_cli('install mylib mylib2', config_file)
+    invoke_cli('install a b', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
 def test_install_update_requirements(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('mylib')
+    requirements_file.write('a')
 
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory(version='2.0.0'))
-    invoke_cli('install mylib mylib2', config_file)
+    invoke_cli('install a b', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -23,11 +23,17 @@ def test_install_add_requirements_alphabetically(tmpdir, mock_pip, config_file, 
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_add_editables_at_start_or_after_first_hyphen_group(tmpdir, mock_pip, config_file, snapshot):
-    invoke_cli('install a', config_file)
-    invoke_cli('install -e editable1', config_file)
-    invoke_cli('install b', config_file)
-    invoke_cli('install --editable editable2', config_file)
+def test_install_add_requirements_after_last_hyphen_requirement(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('-r common.txt\n-e editable1')
+    invoke_cli('install a b', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_requirements_after_last_hyphen_with_blank_lines(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('-r common.txt\n\na\n--no-index\n')
+    invoke_cli('install a b c', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -36,6 +42,41 @@ def test_install_add_requirement_after_multiline(tmpdir, mock_pip, config_file, 
     requirements_file.write('a==1.0 --hash=abc\\\n--hash=abc')
 
     invoke_cli('install b', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_editables_at_start_if_no_hyphen_requirement(
+        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a==1.0 --hash=abc\\\n--hash=abc')
+    invoke_cli('install --editable editable1', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_editables_after_last_hyphen_requirement(
+        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a==1.0 --hash=abc\\\n--hash=abc')
+    invoke_cli('install -e editable1', config_file)
+    invoke_cli('install b', config_file)
+    invoke_cli('install --editable editable2', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_editables_with_blank_lines(
+        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('-r common.txt\n\n--no-index\n')
+    invoke_cli('install -e editable1', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_editables_after_multiline(
+        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('-e editable1\\\nmultiline\n')
+
+    invoke_cli('install -e editable2 a', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -49,7 +90,7 @@ def test_install_keep_comments(tmpdir, mock_pip, config_file, snapshot):
 
 def test_install_keep_etc(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('a ; --hash=abc\nb==0.0.1 ; --hash=abc\nc >= 1.1, == 1.*')
+    requirements_file.write('a ; --hash=abc\nb==0.0.1 ; --hash=abc\nc >= 1.1, == 1.* ; --hash=abc')
 
     invoke_cli('install a b c==3.0.0', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
@@ -99,7 +140,7 @@ def test_install_set_index_url(tmpdir, mock_pip, config_file, snapshot):
 
 
 def test_install_add_extra_index_url(tmpdir, mock_pip, config_file, snapshot):
-    invoke_cli('install a --extra-index-url https://index.url,https://index.url2', config_file)
+    invoke_cli('install a --extra-index-url https://index.url,https://index.url2', config_file, True)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -129,4 +170,28 @@ def test_install_add_find_links(tmpdir, mock_pip, config_file, snapshot):
 def test_install_not_repeat_find_links(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install a --find-links https://find.links', config_file)
     invoke_cli('install a --find-links https://find.links', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_options_after_last_hyphen_requirement(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('--no-index\n-f https://find.links\n')
+
+    invoke_cli('install a --extra-index-url https://new.last', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_options_after_multiline(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('--no-index\\\nmultiline\n')
+
+    invoke_cli('install a --extra-index-url https://index.url', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_options_before_editables(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('--no-index\\\nmultiline\n-f https://find.links\n-e editable1')
+
+    invoke_cli('install a --extra-index-url https://index.url', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
