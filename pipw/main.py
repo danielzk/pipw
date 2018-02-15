@@ -79,42 +79,22 @@ class Requirements(object):
             if not found:
                 self._add_package(package)
 
-    def save_extra_index_urls(self, urls):
+    def save_option(self, option, values=None):
         if self.buffer is None:
             self.read()
 
-        option = 'extra_index_url'
-        for url in urls:
-            found = self._search_option(option, url)
+        if not isinstance(values, list):
+            values = [values]
+
+        for value in values:
+            # An option can be updated if appear only once and have a value
+            if option == 'index_url':
+                found = self._update_option(option, value)
+            else:
+                found = self._search_option(option, value)
+
             if not found:
-                self._add_option(option, url)
-
-    def save_index_url(self, url):
-        if self.buffer is None:
-            self.read()
-
-        option = 'index_url'
-        found = self._update_option(option, url)
-        if not found:
-            self._add_option(option, url)
-
-    def save_no_index(self):
-        if self.buffer is None:
-            self.read()
-
-        option = 'no_index'
-        found = self._search_option(option)
-        if not found:
-            self._add_option(option)
-
-    def save_find_links(self, url):
-        if self.buffer is None:
-            self.read()
-
-        option = 'find_links'
-        found = self._search_option(option, url)
-        if not found:
-            self._add_option(option, url)
+                self._add_option(option, value)
 
     def _update_package(self, package):
         pattern = '^{}{}{}{}$'.format(
@@ -138,17 +118,17 @@ class Requirements(object):
         for i in range(len(lines)):
             line = lines[i].strip()
 
-            # Add after first "-" group
-            if package.editable:
-                if line.startswith('-'):
-                    add_to_index = i + 1
-                elif add_to_index:
-                    break
+            # If is an empty line, a comment or multiline continuation
+            if (not line or
+                    line.startswith('#') or
+                    (i and lines[i - 1].endswith('\\'))):
                 continue
 
-            if not line or line.startswith(('#', '-')):
-                if line.startswith('-') and not add_to_index:
-                    add_to_index = i + 1
+            if line.startswith('-'):
+                add_to_index = i + 1
+                continue
+
+            if package.editable:
                 continue
 
             buffer_package = self.parse_package(line)
@@ -157,20 +137,20 @@ class Requirements(object):
             else:
                 add_to_index = i + 1
 
-        # Add after a multiline package
         while add_to_index and lines[add_to_index - 1].endswith('\\'):
             add_to_index += 1
 
         lines.insert(add_to_index, self.make_line(package))
         self.buffer = '\n'.join(lines)
 
-    def _search_option(self, option, value=''):
+    def _search_option(self, option, value=None):
+        value_pattern = ''
         if value:
-            value = ' {}'.format(value)
+            value_pattern = ' {}'.format(value)
 
         pattern = '^(?:{}){}{}$'.format(
             '|'.join(PIP_OPTIONS[option]),
-            value,
+            value_pattern,
             self.patterns['etc'],
         )
         return re.search(pattern, self.buffer, flags=re.MULTILINE)
@@ -188,19 +168,28 @@ class Requirements(object):
         )
         return found
 
-    def _add_option(self, option, value=''):
+    def _add_option(self, option, value=None):
         lines = self.buffer.split('\n')
 
         add_to_index = 0
-        lines_indices = iter(range(len(lines)))
-        for i in lines_indices:
+        for i in range(len(lines)):
             line = lines[i].strip()
+
+            if line.startswith(('-e ', '--editable')):
+                add_to_index = i
+                break
+
+            if i and lines[i - 1].endswith('\\'):
+                continue
+
             if line.startswith('-'):
                 add_to_index = i + 1
-                while lines[add_to_index - 1].endswith('\\'):
-                    add_to_index += 1
-                    next(lines_indices)
-                break
+
+        while add_to_index and lines[add_to_index - 1].endswith('\\'):
+            add_to_index += 1
+
+        if not value:
+            value = ''
 
         new_line = '{} {}'.format(PIP_OPTIONS[option][0], value).strip()
         lines.insert(add_to_index, new_line)
@@ -267,33 +256,33 @@ def cli(pip_args, save, no_save, config):
     if save and no_save:
         exit('--save and --no-save options are mutually exclusive')
 
-    save = not no_save
     config = init_config(config)
     command = pip_args[0]
     pip_args = pip_args[1:]
     pip_output = subprocess.call(['pip', command] + list(pip_args))
 
+    save = not no_save
     if pip_output != 0 or command not in ['install', 'uninstall'] or not save:
         return
 
-    packages = []
-    index_url = None
-    extra_index_urls = None
-    find_links = None
-    no_index = False
+    req = Requirements(config, config['requirements'])
 
+    packages = []
     pip_args = iter(pip_args)
     for arg in pip_args:
         if arg in PIP_OPTIONS['editable']:
             packages.append('-e ' + next(pip_args))
         elif arg in PIP_OPTIONS['index_url']:
-            index_url = next(pip_args)
+            url = next(pip_args)
+            req.save_option('index_url', url)
         elif arg in PIP_OPTIONS['extra_index_url']:
-            extra_index_urls = next(pip_args).split(',')
+            urls = next(pip_args).split(',')
+            req.save_option('extra_index_url', urls)
         elif arg in PIP_OPTIONS['find_links']:
-            find_links = next(pip_args)
+            url = next(pip_args)
+            req.save_option('find_links', url)
         elif arg in PIP_OPTIONS['no_index']:
-            no_index = True
+            req.save_option('no_index')
         elif arg in PIP_OPTIONS['requirements']:
             # Skip requirements argument
             next(pip_args)
@@ -306,21 +295,7 @@ def cli(pip_args, save, no_save, config):
     if not packages:
         return
 
-    req = Requirements(config, config['requirements'])
     req.save_installed_packages(packages)
-
-    if index_url:
-        req.save_index_url(index_url)
-
-    if extra_index_urls:
-        req.save_extra_index_urls(extra_index_urls)
-
-    if no_index:
-        req.save_no_index()
-
-    if find_links:
-        req.save_find_links(find_links)
-
     req.write()
 
 
