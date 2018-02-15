@@ -126,3 +126,6 @@ multiline
 --extra-index-url https://index.url
 -e editable1
 a~=1.0.0'''
+
+snapshots['test_install_skip_requirements_argument 1'] = '''a~=1.0.0
+'''

@@ -195,3 +195,12 @@ def test_install_add_options_before_editables(tmpdir, monkeypatch, mock_pip, con
 
     invoke_cli('install a --extra-index-url https://index.url', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_skip_requirements_argument(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+    invoke_cli('install -r test.txt', config_file)
+    requirements_exists = tmpdir.join('requirements.txt').check()
+    assert not requirements_exists
+
+    invoke_cli('install a --requirements test.txt', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
