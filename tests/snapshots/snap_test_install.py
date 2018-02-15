@@ -68,3 +68,12 @@ a~=1.0.0
 snapshots['test_install_not_repeat_no_index 1'] = '''--no-index
 a~=1.0.0
 '''
+
+snapshots['test_install_add_find_links 1'] = '''-f https://find.links
+-f https://find.links2
+a~=1.0.0
+'''
+
+snapshots['test_install_not_repeat_find_links 1'] = '''-f https://find.links
+a~=1.0.0
+'''

@@ -118,3 +118,15 @@ def test_install_not_repeat_no_index(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install a --no-index', config_file)
     invoke_cli('install a --no-index', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_find_links(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a --find-links https://find.links', config_file)
+    invoke_cli('install a -f https://find.links2', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_not_repeat_find_links(tmpdir, mock_pip, config_file, snapshot):
+    invoke_cli('install a --find-links https://find.links', config_file)
+    invoke_cli('install a --find-links https://find.links', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
