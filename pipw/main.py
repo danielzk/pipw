@@ -107,6 +107,15 @@ class Requirements(object):
         if not found:
             self._add_option(option)
 
+    def save_find_links(self, url):
+        if self.buffer is None:
+            self.read()
+
+        option = 'find_links'
+        found = self._search_option(option, url)
+        if not found:
+            self._add_option(option, url)
+
     def _update_package(self, package):
         pattern = '^{}{}{}{}$'.format(
             self.patterns['editable'],
@@ -308,6 +317,9 @@ def cli(pip_args, save, no_save, config):
 
     if no_index:
         req.save_no_index()
+
+    if find_links:
+        req.save_find_links(find_links)
 
     req.write()
 
