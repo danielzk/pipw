@@ -4,8 +4,6 @@ pipw
 
 A wrapper for pip to save packages in requirements files similar to npm.
 
-You can use it in the same way you use pip since this is just a wrapper.
-
 Installing
 ==========
 
@@ -13,8 +11,7 @@ Installing
 
   $ pip install pipw
 
-You can also pass an option to overwrite the pip command instead of using
-`pipw`:
+You can also pass an option to replace the pip command:
 
 .. code-block::
 
@@ -35,7 +32,7 @@ TODO: add envs
 
 .. code-block::
 
-  pipw (install|uninstall) <package>... [options]
+  pipw (install|uninstall) [-e] <package>... [options]
 
 Options:
 
@@ -68,8 +65,6 @@ Example of a config file:
 Tests
 =====
 
-TODO: add tox
-
 Tests are in :code:`tests/`. To run the tests use one of these commands:
 
 .. code-block:: bash
@@ -77,6 +72,12 @@ Tests are in :code:`tests/`. To run the tests use one of these commands:
   $ make tests
   $ make wip-tests
   $ make review-tests
+
+You can also pass the environment. For example:
+
+.. code-block:: bash
+
+  $ make tests env=py35
 
 Authors
 =======
