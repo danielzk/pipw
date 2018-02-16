@@ -1,6 +1,5 @@
-from pkg_resources import DistributionNotFound
-
 from click.testing import CliRunner
+from pkg_resources import DistributionNotFound
 
 from pipw.main import cli
 
@@ -8,8 +7,9 @@ from pipw.main import cli
 def invoke_cli(commands, config_file, print_output=False):
     if isinstance(commands, str):
         commands = commands.split()
-    runner = CliRunner()
+
     commands += ['--config', config_file.strpath]
+    runner = CliRunner()
     result = runner.invoke(cli, commands)
 
     if result.output and print_output:

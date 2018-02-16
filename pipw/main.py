@@ -1,13 +1,13 @@
 from collections import namedtuple, OrderedDict
 import os
 from os.path import dirname
-import pkg_resources
-from pkg_resources import RequirementParseError, DistributionNotFound
 import re
 import sys
-import subprocess
 
 import click
+import pip
+import pkg_resources
+from pkg_resources import RequirementParseError, DistributionNotFound
 import yaml
 
 PIP_OPTIONS = {
@@ -20,7 +20,7 @@ PIP_OPTIONS = {
 }
 
 Package = namedtuple('Package', [
-    'editable', 'name_or_url', 'version', 'installed_version', 'etc',
+    'editable', 'name_or_url', 'version', 'installed_version', 'extra',
 ])
 
 
@@ -29,7 +29,7 @@ class Requirements(object):
         ('editable', '(?P<editable>-e )?'),
         ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|>=|<=|!=|~=).)+)'),
         ('version', '(?P<version>(?: *(?:==|>|<|>=|<=|!=|~=) *[^\n ]+)+)?'),
-        ('etc', '(?P<etc>(?: +[#;\-]+[^\n]+)?\n?)'),
+        ('extra', '(?P<extra>(?: +[#;\-]+[^\n]+)?\n?)'),
     ])
 
     def __init__(self, config, filepath):
@@ -40,11 +40,11 @@ class Requirements(object):
     def parse_package(self, package):
         pattern = '^{}$'.format(''.join(self.patterns.values()))
         match = re.search(pattern, package)
-        editable, name_or_url, version, etc = match.groups()
+        editable, name_or_url, version, extra = match.groups()
         installed_version = self.get_installed_version(name_or_url)
         package = Package(
             bool(editable), name_or_url.strip(), version, installed_version,
-            etc,
+            extra,
         )
         return package
 
@@ -58,8 +58,8 @@ class Requirements(object):
         elif package.installed_version:
             line += self.config['specifier'] + package.installed_version
 
-        if package.etc:
-            line += package.etc
+        if package.extra:
+            line += package.extra
 
         return line
 
@@ -101,11 +101,11 @@ class Requirements(object):
             self.patterns['editable'],
             re.escape(package.name_or_url),
             self.patterns['version'],
-            self.patterns['etc'],
+            self.patterns['extra'],
         )
         self.buffer, found = re.subn(
             pattern,
-            '{}\g<etc>'.format(self.make_line(package)),
+            '{}\g<extra>'.format(self.make_line(package)),
             self.buffer,
             flags=re.MULTILINE,
         )
@@ -151,18 +151,18 @@ class Requirements(object):
         pattern = '^(?:{}){}{}$'.format(
             '|'.join(PIP_OPTIONS[option]),
             value_pattern,
-            self.patterns['etc'],
+            self.patterns['extra'],
         )
         return re.search(pattern, self.buffer, flags=re.MULTILINE)
 
     def _update_option(self, option, value):
         pattern = '^(?P<option>{}) [^ ]+{}$'.format(
             '|'.join(PIP_OPTIONS[option]),
-            self.patterns['etc'],
+            self.patterns['extra'],
         )
         self.buffer, found = re.subn(
             pattern,
-            '\g<option> {}\g<etc>'.format(value),
+            '\g<option> {}\g<extra>'.format(value),
             self.buffer,
             flags=re.MULTILINE,
         )
@@ -257,11 +257,12 @@ def cli(pip_args, save, no_save, config):
         exit('--save and --no-save options are mutually exclusive')
 
     config = init_config(config)
+    pip_output = pip.main(list(pip_args))
+
     command = pip_args[0]
     pip_args = pip_args[1:]
-    pip_output = subprocess.call(['pip', command] + list(pip_args))
-
     save = not no_save
+
     if pip_output != 0 or command not in ['install', 'uninstall'] or not save:
         return
 

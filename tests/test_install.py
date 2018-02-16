@@ -115,7 +115,7 @@ def test_install_no_save(tmpdir, mock_pip, config_file, snapshot):
 
 
 def test_install_no_save_on_pip_error(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
-    monkeypatch.setattr('subprocess.call', lambda args: 1)
+    monkeypatch.setattr('pip.main', lambda args: 1)
     invoke_cli('install a b', config_file)
     requirements_exists = tmpdir.join('requirements.txt').check()
     assert not requirements_exists
