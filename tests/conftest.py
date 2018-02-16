@@ -1,7 +1,6 @@
 import os
-import pkg_resources
-import subprocess
 
+import pkg_resources
 import pytest
 import yaml
 
@@ -11,7 +10,7 @@ from tests.utils import raise_distribution_not_found
 
 @pytest.fixture(scope='function')
 def mock_pip(monkeypatch):
-    monkeypatch.setattr('subprocess.call', lambda args: 0)
+    monkeypatch.setattr('pip.main', lambda args: 0)
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory())

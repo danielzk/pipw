@@ -2,25 +2,44 @@
 pipw
 ****
 
-Wrapper for pip to save packages in requirements files similar to npm.
+A wrapper for pip to save packages in requirements files similar to npm.
+
+You can use it in the same way you use pip since this is just a wrapper.
 
 Installing
 ==========
 
-TODO: add setup tools
+.. code-block::
+
+  $ pip install pipw
+
+You can also pass an option to overwrite the pip command instead of using
+`pipw`:
+
+.. code-block::
+
+  $ pip install pipw --install-option="--override-pip"
+
+If you want to recover the pip command, you just have to reinstall pip. For
+example:
+
+.. code-block::
+
+  $ pip uninstall pip
+  $ easy_install pip
 
 Usage
 ==========
 
 TODO: add envs
 
-.. code-block:: none
+.. code-block::
 
   pipw (install|uninstall) <package>... [options]
 
 Options:
 
-.. code-block:: none
+.. code-block::
 
   -s, --save           Save packages to the requirements file. This is default
                        unless --no-save. Packages are saved in
@@ -31,7 +50,7 @@ Options:
                        executed.
   --help               Show this message and exit.
 
-All pip commands are available while this is just a wrapper.
+All pip commands and options are still available.
 
 Config file
 -----------
@@ -51,11 +70,13 @@ Tests
 
 TODO: add tox
 
-Tests are in :code:`tests/`. To run the tests use:
+Tests are in :code:`tests/`. To run the tests use one of these commands:
 
 .. code-block:: bash
 
-  $ pytest
+  $ make tests
+  $ make wip-tests
+  $ make review-tests
 
 Authors
 =======
