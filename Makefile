@@ -1,13 +1,18 @@
 .PHONY: tests build
 
+ENV_OPT=
+ifneq ($(env),)
+	ENV_OPT=-e $(env)
+endif
+
 tests:
-	pytest -s -vv
+	tox ${ENV_OPT}
 
 wip-tests:
-	pytest -s -vv -m wip
+	tox ${ENV_OPT} -- -m wip
 
 review-tests:
-	pytest -s -vv --cov-report term-missing --cov=pipw
+	tox ${ENV_OPT} -- --cov-report term-missing --cov=pipw
 
 build:
 	rm -rf dist
