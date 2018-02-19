@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: deps3-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
       - run:
           name: Install python dependencies
           command: |
@@ -14,7 +14,7 @@ jobs:
             . venv/bin/activate
             pip install -r requirements/dev.txt
       - save_cache:
-          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: deps3-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
           paths:
             - "venv"
       - run:
@@ -24,19 +24,20 @@ jobs:
             make review-tests
   deploy:
     docker:
-      - image: circleci/python:3.5
+      - image: themattrix/tox
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: deps3-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
       - run:
           name: Install python dependencies
           command: |
-            python3 -m venv venv
+            apt-get update && apt-get install -y git
+            virtualenv -p python3 venv
             . venv/bin/activate
-            pip install -r requirements/common.txt
+            pip install -r requirements/dev.txt
       - save_cache:
-          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: deps3-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
           paths:
             - "venv"
       - run:
@@ -52,10 +53,14 @@ jobs:
             echo -e "password:$PYPI_PASSWORD" >> ~/.pypirc
       - run:
           name: Build package
-          command: make build
+          command: |
+            . venv/bin/activate
+            make build
       - run:
           name: Upload package to PyPI
-          command: twine upload dist/*
+          command: |
+            . venv/bin/activate
+            twine upload dist/*
 workflows:
   version: 2
   build_and_deploy:
