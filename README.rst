@@ -2,6 +2,9 @@
 pipw
 ****
 
+.. image:: https://circleci.com/gh/danielzk/pipw/tree/master.svg?style=shield
+    :target: https://circleci.com/gh/danielzk/pipw/tree/master
+
 A wrapper for pip to save packages in requirements files similar to npm.
 
 Installing

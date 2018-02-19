@@ -1,3 +1,4 @@
+import os
 from os.path import join, dirname
 import subprocess
 import sys
@@ -9,9 +10,8 @@ from setuptools.command.install import install
 
 current_dir = dirname(__file__)
 
-reqs = parse_requirements(
-    join(current_dir, 'requirements', 'common.txt'),
-    session=PipSession())
+reqs_file = join(current_dir, 'requirements', 'common.txt')
+reqs = parse_requirements(reqs_file, session=PipSession())
 install_requires = [str(req.req) for req in reqs]
 
 with open(join(current_dir, 'VERSION')) as version_file:
@@ -21,6 +21,17 @@ with open(join(current_dir, 'README.rst')) as readme_file:
     long_description = readme_file.read()
 
 console_scripts = ['pipw = pipw.main:cli']
+
+
+class VerifyVersionCommand(install):
+    description = 'Verify that the git tag matches our version'
+
+    def run(self):
+        tag = os.getenv('CIRCLE_TAG')
+        if tag != version:
+            info = 'Git tag "{}" does not match the current version "{}"'.format(
+                tag, version)
+            sys.exit(info)
 
 
 class CustomInstall(install):
@@ -42,6 +53,7 @@ class CustomInstall(install):
 
         install.run(self)
 
+
 setup(
     name='pipw',
     version=version,
@@ -54,7 +66,10 @@ setup(
     packages=['pipw'],
     entry_points = {'console_scripts': console_scripts},
     long_description=long_description,
-    cmdclass={'install': CustomInstall},
+    cmdclass={
+        'install': CustomInstall,
+        'verify': VerifyVersionCommand,
+    },
     classifiers=[
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 2.7',

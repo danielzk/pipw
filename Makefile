@@ -5,8 +5,6 @@ ifneq ($(env),)
 	ENV_OPT=-e $(env)
 endif
 
-VERSION=`cat VERSION | xargs`
-
 tests:
 	tox ${ENV_OPT}
 
@@ -21,10 +19,3 @@ build:
 	python setup.py build
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
-
-deploy:
-	git checkout master
-	make build
-	twine upload dist/*
-	git tag -a ${VERSION} -m 'Release ${VERSION}'
-	git push origin master
