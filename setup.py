@@ -1,6 +1,7 @@
 import os
 from os.path import join, dirname
 import subprocess
+from subprocess import Popen, PIPE
 import sys
 
 from pip.req import parse_requirements
@@ -27,11 +28,17 @@ class VerifyVersionCommand(install):
     description = 'Verify that the git tag matches our version'
 
     def run(self):
-        tag = os.getenv('CIRCLE_TAG')
+        args = 'git describe --abbrev=0 --tags'.split()
+        p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        tag, err = p.communicate()
+        if p.returncode:
+            sys.exit('Git tag not found')
+
+        tag = tag.decode('utf-8').strip()
         if tag != version:
-            info = 'Git tag "{}" does not match the current version "{}"'.format(
+            msg = 'Git tag "{}" does not match the current version "{}"'.format(
                 tag, version)
-            sys.exit(info)
+            sys.exit(msg)
 
 
 class CustomInstall(install):

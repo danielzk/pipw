@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
       - run:
           name: Install python dependencies
           command: |
@@ -14,7 +14,7 @@ jobs:
             . venv/bin/activate
             pip install -r requirements/dev.txt
       - save_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
           paths:
             - "venv"
       - run:
@@ -24,19 +24,19 @@ jobs:
             make review-tests
   deploy:
     docker:
-      - image: themattrix/tox
+      - image: circleci/python:3.5
     steps:
       - checkout
       - restore_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
       - run:
           name: Install python dependencies
           command: |
-            virtualenv -p python3 venv
+            python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements/common.txt
       - save_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          key: v1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
           paths:
             - "venv"
       - run:
@@ -58,17 +58,12 @@ jobs:
           command: twine upload dist/*
 workflows:
   version: 2
-  test_and_deploy:
+  build_and_deploy:
     jobs:
-      - test:
-          filters:
-            tags:
-              only: /.*/
+      - test
       - deploy:
           requires:
             - test
           filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
             branches:
-              ignore: /.*/
+              only: master
