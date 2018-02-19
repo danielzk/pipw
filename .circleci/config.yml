@@ -1,0 +1,84 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: themattrix/tox
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+
+      - run:
+          name: Install python dependencies
+          command: |
+            virtualenv -p python3 venv
+            . venv/bin/activate
+            pip install -r requirements/dev.txt
+
+      - save_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          paths:
+            - "venv"
+
+      - run:
+          name: Run tests
+          command: |
+            . venv/bin/activate
+            make review-tests
+
+  deploy:
+    docker:
+      - image: themattrix/tox
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+
+      - run:
+          name: Install python dependencies
+          command: |
+            virtualenv -p python3 venv
+            . venv/bin/activate
+            pip install -r requirements/common.txt
+
+      - save_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}-{{ checksum "requirements/common.txt" }}
+          paths:
+            - "venv"
+
+      - run:
+          name: Verify git tag and version
+          command: |
+            . venv/bin/activate
+            python setup.py verify
+
+      - run:
+          name: Init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username:danielrz" >> ~/.pypirc
+            echo -e "password:$PYPI_PASSWORD" >> ~/.pypirc
+
+      - run:
+          name: Build package
+          command: make build
+
+      - run:
+          name: Upload package to PyPI
+          command: twine upload dist/*
+
+workflows:
+  version: 2
+  test_and_deploy:
+    jobs:
+      - test
+      - deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
