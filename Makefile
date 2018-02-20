@@ -5,6 +5,11 @@ ifneq ($(env),)
 	ENV_OPT=-e $(env)
 endif
 
+ifneq ($(CODECOV_TOKEN),)
+	COVECOV_COMMAND=codecov -t $(CODECOV_TOKEN)
+	export COVECOV_COMMAND
+endif
+
 tests:
 	tox ${ENV_OPT}
 
