@@ -23,5 +23,5 @@ build:
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
 
-realease:
+release:
 	twine upload dist/*
