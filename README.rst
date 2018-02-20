@@ -4,6 +4,12 @@ pipw
 
 .. image:: https://circleci.com/gh/danielzk/pipw/tree/master.svg?style=shield
     :target: https://circleci.com/gh/danielzk/pipw/tree/master
+.. image:: https://img.shields.io/pypi/v/pipw.svg
+    :target: https://pypi.python.org/pypi/pipw/
+.. image:: https://img.shields.io/pypi/pyversions/pipw.svg
+    :target: https://pypi.python.org/pypi/pipw/
+.. image:: https://img.shields.io/codecov/c/github/danielzk/pipw/master.svg
+    :target: https://codecov.io/gh/danielzk/pipw/branch/master
 
 A wrapper for pip to save packages in requirements files similar to npm.
 
