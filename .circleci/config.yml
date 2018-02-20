@@ -10,6 +10,7 @@ jobs:
       - run:
           name: Install python dependencies
           command: |
+            apt-get update && apt-get install -y git
             virtualenv -p python3 venv
             . venv/bin/activate
             pip install -r requirements/dev.txt
