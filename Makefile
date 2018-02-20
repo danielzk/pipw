@@ -14,8 +14,14 @@ wip-tests:
 review-tests:
 	tox ${ENV_OPT} -- --cov-report term-missing --cov=pipw
 
+upload-coverage:
+	codecov -t $(CODECOV_TOKEN)
+
 build:
 	rm -rf dist
 	python setup.py build
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
+
+realease:
+	twine upload dist/*
