@@ -23,6 +23,11 @@ jobs:
           command: |
             . venv/bin/activate
             make review-tests
+      - run:
+          name: Upload coverage
+          command: |
+            . venv/bin/activate
+            make upload-coverage
   deploy:
     docker:
       - image: themattrix/tox
@@ -61,7 +66,7 @@ jobs:
           name: Upload package to PyPI
           command: |
             . venv/bin/activate
-            twine upload dist/*
+            make release
 workflows:
   version: 2
   build_and_deploy:

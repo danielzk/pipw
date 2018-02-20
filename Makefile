@@ -5,11 +5,6 @@ ifneq ($(env),)
 	ENV_OPT=-e $(env)
 endif
 
-ifneq ($(CODECOV_TOKEN),)
-	COVECOV_COMMAND=codecov -t $(CODECOV_TOKEN)
-	export COVECOV_COMMAND
-endif
-
 tests:
 	tox ${ENV_OPT}
 
@@ -19,8 +14,14 @@ wip-tests:
 review-tests:
 	tox ${ENV_OPT} -- --cov-report term-missing --cov=pipw
 
+upload-coverage:
+	codecov -t $(CODECOV_TOKEN)
+
 build:
 	rm -rf dist
 	python setup.py build
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
+
+realease:
+	twine upload dist/*
