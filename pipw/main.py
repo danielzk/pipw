@@ -314,6 +314,7 @@ help = {
         "user's home directory."
     ),
     'env': 'Save in a environment previously declared in the config file.',
+    'save_to': 'Save to a custom file.',
 }
 
 @click.command(context_settings=dict(ignore_unknown_options=True))
@@ -322,9 +323,13 @@ help = {
 @click.option('--no-save', '-n', help=help['no_save'], is_flag=True)
 @click.option('--config', help=help['config'], metavar='<path>')
 @click.option('--env', '-m', help=help['env'], metavar='<name>')
-def cli(pip_args, save, no_save, config, env):
+@click.option('--save-to', help=help['save_to'], metavar='<path>')
+def cli(pip_args, save, no_save, config, env, save_to):
     if save and no_save:
         exit('--save and --no-save options are mutually exclusive')
+
+    if env and save_to:
+        exit('--env and --save-to options are mutually exclusive')
 
     config = init_config(config)
 
@@ -333,6 +338,8 @@ def cli(pip_args, save, no_save, config, env):
         if env not in config['envs']:
             exit('Environmment "{}" not found'.format(env))
         requirements_file = config['envs'][env]
+    elif save_to:
+        requirements_file = save_to
 
     # Call pip
     pip_output = pip.main(list(pip_args))
@@ -390,7 +397,7 @@ def cli(pip_args, save, no_save, config, env):
 
     if command == 'install':
         req.save_installed_packages(packages)
-    elif env:
+    elif env or save_to:
         req.remove_packages(packages)
     else:
         # Remove for all environments
