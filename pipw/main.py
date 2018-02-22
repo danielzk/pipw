@@ -278,6 +278,7 @@ def init_config(config_path=None):
     config = {
         'requirements': 'requirements.txt',
         'specifier': '~=',
+        'envs': {},
     }
 
     filepath = '.pipwrc'
@@ -312,18 +313,28 @@ help = {
         'file in the directory where the command is executed, or in the '
         "user's home directory."
     ),
+    'env': 'Save in a environment previously declared in the config file.',
 }
 
 @click.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument('pip_args', nargs=-1, type=click.UNPROCESSED)
 @click.option('--save', '-s', help=help['save'], is_flag=True)
 @click.option('--no-save', '-n', help=help['no_save'], is_flag=True)
-@click.option('--config', '-c', help=help['config'], metavar='<path>')
-def cli(pip_args, save, no_save, config):
+@click.option('--config', help=help['config'], metavar='<path>')
+@click.option('--env', '-m', help=help['env'], metavar='<name>')
+def cli(pip_args, save, no_save, config, env):
     if save and no_save:
         exit('--save and --no-save options are mutually exclusive')
 
     config = init_config(config)
+
+    requirements_file = config['requirements']
+    if env:
+        if env not in config['envs']:
+            exit('Environmment "{}" not found'.format(env))
+        requirements_file = config['envs'][env]
+
+    # Call pip
     pip_output = pip.main(list(pip_args))
 
     command = pip_args[0]
@@ -333,7 +344,7 @@ def cli(pip_args, save, no_save, config):
     if pip_output != 0 or command not in ['install', 'uninstall'] or not save:
         return
 
-    req = Requirements(config, config['requirements'])
+    req = Requirements(config, requirements_file)
 
     packages = []
     install_options = []
@@ -379,8 +390,16 @@ def cli(pip_args, save, no_save, config):
 
     if command == 'install':
         req.save_installed_packages(packages)
-    else:
+    elif env:
         req.remove_packages(packages)
+    else:
+        # Remove for all environments
+        req = Requirements(config, config['requirements'])
+        req.remove_packages(packages)
+        for file_ in config['envs'].values():
+            env_req = Requirements(config, file_)
+            env_req.remove_packages(packages)
+            env_req.write()
 
     req.write()
 

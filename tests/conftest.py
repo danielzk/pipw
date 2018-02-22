@@ -1,11 +1,15 @@
 import os
 
 import pkg_resources
+from pkg_resources import DistributionNotFound
 import pytest
 import yaml
 
 from tests.factories.packages import PkgDistributionFactory
-from tests.utils import raise_distribution_not_found
+
+
+def raise_distribution_not_found(*args, **kwargs):
+    raise DistributionNotFound()
 
 
 @pytest.fixture(scope='function')
