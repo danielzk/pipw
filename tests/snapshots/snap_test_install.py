@@ -136,3 +136,13 @@ snapshots['test_install_update_multiline_requirement 1'] = 'a~=2.0.0 --hash=abc 
 
 snapshots['test_install_options_keep_comments 1'] = '''--index-url https://index.url2 # Comment
 a~=1.0.0'''
+
+snapshots['test_install_add_requirement_with_install_option 1'] = '''a~=1.0.0 --install-option="--override-pip" --install-option="--another"
+'''
+
+snapshots['test_install_update_requirement_with_install_option 1'] = 'a~=1.0.0 --install-option="--another" --install-option="--override-pip"'
+
+snapshots['test_install_add_requirement_with_global_option 1'] = '''a~=1.0.0 --global-option="--override-pip" --global-option="--another"
+'''
+
+snapshots['test_install_update_requirement_with_global_option 1'] = 'a~=1.0.0 --global-option="--another" --global-option="--override-pip"'

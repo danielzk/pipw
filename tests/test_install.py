@@ -16,7 +16,7 @@ def test_install_update_requirements(monkeypatch, tmpdir, mock_pip, config_file,
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory(version='2.0.0'))
-    invoke_cli('install a b c', config_file, True)
+    invoke_cli('install a b c', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -142,7 +142,7 @@ def test_install_set_index_url(tmpdir, mock_pip, config_file, snapshot):
 
 
 def test_install_add_extra_index_url(tmpdir, mock_pip, config_file, snapshot):
-    invoke_cli('install a --extra-index-url https://index.url,https://index.url2', config_file, True)
+    invoke_cli('install a --extra-index-url https://index.url,https://index.url2', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -215,7 +215,7 @@ def test_install_update_multiline_requirement(monkeypatch, tmpdir, mock_pip, con
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory(version='2.0.0'))
-    invoke_cli('install a', config_file, True)
+    invoke_cli('install a', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -223,4 +223,30 @@ def test_install_options_keep_comments(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('--index-url https://index.url # Comment')
     invoke_cli('install a --index-url https://index.url2', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_requirement_with_install_option(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    invoke_cli('install a --install-option "--override-pip" --install-option "--another"', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_update_requirement_with_install_option(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a~=1.0.0 --install-option="--override-pip"')
+    invoke_cli('install a --install-option "--another"', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_add_requirement_with_global_option(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    invoke_cli('install a --global-option "--override-pip" --global-option "--another"', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_update_requirement_with_global_option(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a~=1.0.0 --global-option="--override-pip"')
+    invoke_cli('install a --global-option "--another"', config_file)
     check_requirements_snapshot(tmpdir, snapshot)

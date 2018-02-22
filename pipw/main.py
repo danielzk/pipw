@@ -17,6 +17,8 @@ PIP_OPTIONS = {
     'find_links': ['-f', '--find-links'],
     'no_index': ['--no-index'],
     'requirements': ['-r', '--requirements'],
+    'install_option': ['--install-option'],
+    'global_option': ['--global-option'],
 }
 
 Package = namedtuple('Package', [
@@ -299,6 +301,8 @@ def cli(pip_args, save, no_save, config):
     req = Requirements(config, config['requirements'])
 
     packages = []
+    install_options = []
+    global_options = []
     pip_args = iter(pip_args)
     for arg in pip_args:
         if arg in PIP_OPTIONS['editable']:
@@ -318,6 +322,10 @@ def cli(pip_args, save, no_save, config):
         elif arg in PIP_OPTIONS['requirements']:
             # Skip requirements argument
             next(pip_args)
+        elif arg in PIP_OPTIONS['install_option']:
+            install_options.append(next(pip_args))
+        elif arg in PIP_OPTIONS['global_option']:
+            global_options.append(next(pip_args))
 
         if arg.startswith('-'):
             continue
@@ -326,6 +334,13 @@ def cli(pip_args, save, no_save, config):
 
     if not packages:
         return
+
+    if install_options or global_options:
+        for package in packages:
+            for value in install_options:
+                package.options.append('--install-option=' + value)
+            for value in global_options:
+                package.options.append('--global-option=' + value)
 
     req.save_installed_packages(packages)
     req.write()
