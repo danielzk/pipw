@@ -37,8 +37,6 @@ example:
 Usage
 ==========
 
-TODO: add envs
-
 .. code-block::
 
   pipw (install|uninstall) [-e] <package>... [options]
@@ -56,6 +54,7 @@ Options:
                     executed, or in the user's home directory.
   -m, --env <name>  Save in a environment previously declared in the config
                     file.
+  --save-to <path>  Save to a custom file.
   --help            Show this message and exit.
 
 All pip commands and options are still available.
