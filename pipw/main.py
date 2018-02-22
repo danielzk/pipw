@@ -103,12 +103,19 @@ class Requirements(object):
             if not found:
                 self._add_option(option, value)
 
+    def remove_packages(self, packages):
+        if self.buffer is None:
+            self.read()
+
+        for package in packages:
+            self._remove_package(package)
+
     def _update_package(self, package):
         lines = self.buffer.split('\n')
 
         found = False
-        for i in range(len(lines)):
-            line = lines[i]
+        for i, line in enumerate(lines):
+            line = line.strip()
 
             # Concatenate multiline
             next_line_index = i + 1
@@ -132,7 +139,7 @@ class Requirements(object):
                 new_line += comment_start + comment
 
             # Remove multiline
-            line = lines[i]
+            line = lines[i].strip()
             while line.endswith('\\'):
                 line += lines[i + 1]
                 del lines[i + 1]
@@ -147,8 +154,8 @@ class Requirements(object):
         lines = self.buffer.split('\n')
 
         add_to_index = 0
-        for i in range(len(lines)):
-            line = lines[i].strip()
+        for i, line in enumerate(lines):
+            line = line.strip()
 
             # If is an empty line, a comment or multiline continuation
             if (not line or
@@ -174,6 +181,29 @@ class Requirements(object):
 
         lines.insert(add_to_index, self.make_line(package))
         self.buffer = '\n'.join(lines)
+
+    def _remove_package(self, package):
+        lines = self.buffer.split('\n')
+        for i, line in enumerate(lines):
+            next_line_index = i + 1
+            while line.endswith('\\'):
+                line += lines[next_line_index]
+                next_line_index += 1
+            line = line.replace('\\', ' ')
+
+            buffer_package = self.parse_package(line)
+            if (not buffer_package or
+                    buffer_package.name_or_url != package.name_or_url):
+                continue
+
+            line = lines[i]
+            while line.endswith('\\'):
+                line += lines[i + 1]
+                del lines[i + 1]
+            del lines[i]
+
+            self.buffer = '\n'.join(lines)
+            break
 
     def _search_option(self, option, value=None):
         value_pattern = ''
@@ -204,8 +234,8 @@ class Requirements(object):
         lines = self.buffer.split('\n')
 
         add_to_index = 0
-        for i in range(len(lines)):
-            line = lines[i].strip()
+        for i, line in enumerate(lines):
+            line = line.strip()
 
             if line.startswith(('-e ', '--editable')):
                 add_to_index = i
@@ -342,7 +372,11 @@ def cli(pip_args, save, no_save, config):
             for value in global_options:
                 package.options.append('--global-option=' + value)
 
-    req.save_installed_packages(packages)
+    if command == 'install':
+        req.save_installed_packages(packages)
+    else:
+        req.remove_packages(packages)
+
     req.write()
 
 
