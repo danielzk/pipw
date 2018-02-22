@@ -47,22 +47,26 @@ Options:
 
 .. code-block::
 
-  -s, --save           Save packages to the requirements file. This is default
-                       unless --no-save. Packages are saved in
-                       requirements.txt unless a custom configuration is used.
-  -n, --no-save        Prevent save packages to the requirements file.
-  -c, --config <path>  Pass a custom config file. By default it looks for a
-                       .pipwrc file in the directory where the command is
-                       executed, or in the user's home directory.
-  --help               Show this message and exit.
+  -s, --save        Save packages to the requirements file. This is default
+                    unless --no-save. Packages are saved in requirements.txt
+                    unless a custom configuration is used.
+  -n, --no-save     Prevent save packages to the requirements file.
+  --config <path>   Pass a custom config file. By default it looks for a
+                    .pipwrc file in the directory where the command is
+                    executed, or in the user's home directory.
+  -m, --env <name>  Save in a environment previously declared in the config
+                    file.
+  --help            Show this message and exit.
 
 All pip commands and options are still available.
 
 Config file
 -----------
 
-You can create a :code:`.pipwrc` file to use a custom configuration, or pass a
-custom file with the :code:`--config` option.
+You can create a :code:`.pipwrc` file to use a custom configuration. By default
+it looks for the file in the directory where the command is executed, or in the
+user's home directory. You can also pass a custom file to the :code:`--config`
+option.
 
 Example of a config file:
 
@@ -70,6 +74,33 @@ Example of a config file:
 
   requirements: requirements.txt
   specifier: ~=
+  envs:
+      dev: requirements/dev.txt
+
+Environments
+------------
+
+As you can see, you can set environment files in the configuration file:
+
+.. code-block:: yaml
+
+  requirements: requirements/prod.txt
+  envs:
+      dev: requirements/dev.txt
+      test: requirements/test.txt
+
+Use the `-m` (or `--env`) option to save the packages in an environment file:
+
+.. code-block::
+
+  $ pipw install pytest -m test
+
+If no environment is passed, the value defined in `requirements` are used by
+default. If this value is not defined, a `requirements.txt` file is used by
+default. These files are created automatically if they do not exist.
+
+The `uninstall` command will remove the package in all files, unless the `-m`
+option is passed.
 
 Tests
 =====
