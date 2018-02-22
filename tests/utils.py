@@ -26,7 +26,3 @@ def check_requirements_snapshot(tmpdir, snapshot, requirements_path=None):
         requirements_path = tmpdir.join('requirements.txt')
     output = requirements_path.read()
     snapshot.assert_match(output)
-
-
-def raise_distribution_not_found(*args, **kwargs):
-    raise DistributionNotFound()
