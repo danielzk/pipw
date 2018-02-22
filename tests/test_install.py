@@ -11,7 +11,7 @@ def test_install_add_requirements(tmpdir, mock_pip, config_file, snapshot):
 
 def test_install_update_requirements(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('a\nb~=1.0.0')
+    requirements_file.write('a\nb==1.0.0')
 
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
@@ -249,4 +249,27 @@ def test_install_update_requirement_with_global_option(tmpdir, mock_pip, config_
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('a~=1.0.0 --global-option="--override-pip"')
     invoke_cli('install a --global-option "--another"', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_update_requirements_with_hyphen(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a\nreq-hyp==1.0.0')
+
+    monkeypatch.setattr(
+        'pkg_resources.get_distribution',
+        lambda package: PkgDistributionFactory(version='2.0.0'))
+    invoke_cli('install a b c', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_update_requirements_with_different_letter_case(
+        monkeypatch, tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('Django==1.0.0\nmylib')
+
+    monkeypatch.setattr(
+        'pkg_resources.get_distribution',
+        lambda package: PkgDistributionFactory(version='2.0.0'))
+    invoke_cli('install django Mylib', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
