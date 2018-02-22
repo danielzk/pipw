@@ -146,3 +146,11 @@ snapshots['test_install_add_requirement_with_global_option 1'] = '''a~=1.0.0 --g
 '''
 
 snapshots['test_install_update_requirement_with_global_option 1'] = 'a~=1.0.0 --global-option="--another" --global-option="--override-pip"'
+
+snapshots['test_install_update_requirements_with_hyphen 1'] = '''a~=2.0.0
+b~=2.0.0
+c~=2.0.0
+req-hyp==1.0.0'''
+
+snapshots['test_install_update_requirements_with_different_letter_case 1'] = '''django~=2.0.0
+Mylib~=2.0.0'''

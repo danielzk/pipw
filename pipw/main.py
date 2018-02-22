@@ -29,7 +29,7 @@ Package = namedtuple('Package', [
 class Requirements(object):
     patterns = OrderedDict([
         ('editable', '(?P<editable>-e )?'),
-        ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|>=|<=|!=|~=|#|-).)+)'),
+        ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|>=|<=|!=|~=| #| -).)+)'),
         ('version', '(?P<version>(?: *(?:==|>|<|>=|<=|!=|~=) *[^\n ]+)+)?'),
         ('options', '(?P<options>(?: +\-+[^#\n ]+)*\n?)'),
         ('comment', '(?P<comment>(?: +#[^\n]+)?\n?)'),
@@ -126,7 +126,8 @@ class Requirements(object):
 
             buffer_package = self.parse_package(line)
             if (not buffer_package or
-                    buffer_package.name_or_url != package.name_or_url):
+                    buffer_package.name_or_url.lower() !=
+                    package.name_or_url.lower()):
                 continue
 
             found = True
@@ -193,7 +194,8 @@ class Requirements(object):
 
             buffer_package = self.parse_package(line)
             if (not buffer_package or
-                    buffer_package.name_or_url != package.name_or_url):
+                    buffer_package.name_or_url.lower() !=
+                    package.name_or_url.lower()):
                 continue
 
             line = lines[i]
