@@ -1,3 +1,5 @@
+import pytest
+
 from tests.factories.packages import PkgDistributionFactory
 from tests.utils import invoke_cli, check_requirements_snapshot
 
@@ -9,12 +11,12 @@ def test_install_add_requirements(tmpdir, mock_pip, config_file, snapshot):
 
 def test_install_update_requirements(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('a')
+    requirements_file.write('a\nb~=1.0.0')
 
     monkeypatch.setattr(
         'pkg_resources.get_distribution',
         lambda package: PkgDistributionFactory(version='2.0.0'))
-    invoke_cli('install a b', config_file)
+    invoke_cli('install a b c', config_file, True)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
@@ -30,7 +32,7 @@ def test_install_add_requirements_after_last_hyphen_requirement(tmpdir, mock_pip
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_add_requirements_after_last_hyphen_with_blank_lines(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+def test_install_add_requirements_after_last_hyphen_with_blank_lines(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('-r common.txt\n\na\n--no-index\n')
     invoke_cli('install a b c', config_file)
@@ -46,7 +48,7 @@ def test_install_add_requirement_after_multiline(tmpdir, mock_pip, config_file, 
 
 
 def test_install_add_editables_at_start_if_no_hyphen_requirement(
-        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+        tmpdir, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('a==1.0 --hash=abc\\\n--hash=abc')
     invoke_cli('install --editable editable1', config_file)
@@ -54,7 +56,7 @@ def test_install_add_editables_at_start_if_no_hyphen_requirement(
 
 
 def test_install_add_editables_after_last_hyphen_requirement(
-        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+        tmpdir, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('a==1.0 --hash=abc\\\n--hash=abc')
     invoke_cli('install -e editable1', config_file)
@@ -64,7 +66,7 @@ def test_install_add_editables_after_last_hyphen_requirement(
 
 
 def test_install_add_editables_with_blank_lines(
-        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+        tmpdir, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('-r common.txt\n\n--no-index\n')
     invoke_cli('install -e editable1', config_file)
@@ -72,7 +74,7 @@ def test_install_add_editables_with_blank_lines(
 
 
 def test_install_add_editables_after_multiline(
-        tmpdir, monkeypatch, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
+        tmpdir, mock_pip, mock_pkg_dist_not_found, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('-e editable1\\\nmultiline\n')
 
@@ -82,15 +84,15 @@ def test_install_add_editables_after_multiline(
 
 def test_install_keep_comments(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('a # Comment\n# Comment\nc=1.0')
+    requirements_file.write('a # Comment\n# Comment\nc==1.0.0\nd~=0.1.0 --hash=abc # Comment')
 
-    invoke_cli('install a b', config_file)
+    invoke_cli('install a b d', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_keep_etc(tmpdir, mock_pip, config_file, snapshot):
+def test_install_keep_options(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
-    requirements_file.write('a ; --hash=abc\nb==0.0.1 ; --hash=abc\nc >= 1.1, == 1.* ; --hash=abc')
+    requirements_file.write('a --hash=abc\nb==0.0.1 --hash=abc --hash=abc\nc >= 1.1, == 1.* --hash=abc')
 
     invoke_cli('install a b c==3.0.0', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
@@ -173,7 +175,7 @@ def test_install_not_repeat_find_links(tmpdir, mock_pip, config_file, snapshot):
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_add_options_after_last_hyphen_requirement(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+def test_install_add_options_after_last_hyphen_requirement(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('--no-index\n-f https://find.links\n')
 
@@ -181,7 +183,7 @@ def test_install_add_options_after_last_hyphen_requirement(tmpdir, monkeypatch, 
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_add_options_after_multiline(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+def test_install_add_options_after_multiline(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('--no-index\\\nmultiline\n')
 
@@ -189,7 +191,7 @@ def test_install_add_options_after_multiline(tmpdir, monkeypatch, mock_pip, conf
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_add_options_before_editables(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+def test_install_add_options_before_editables(tmpdir, mock_pip, config_file, snapshot):
     requirements_file = tmpdir.join('requirements.txt')
     requirements_file.write('--no-index\\\nmultiline\n-f https://find.links\n-e editable1')
 
@@ -197,10 +199,28 @@ def test_install_add_options_before_editables(tmpdir, monkeypatch, mock_pip, con
     check_requirements_snapshot(tmpdir, snapshot)
 
 
-def test_install_skip_requirements_argument(tmpdir, monkeypatch, mock_pip, config_file, snapshot):
+def test_install_skip_requirements_argument(tmpdir, mock_pip, config_file, snapshot):
     invoke_cli('install -r test.txt', config_file)
     requirements_exists = tmpdir.join('requirements.txt').check()
     assert not requirements_exists
 
     invoke_cli('install a --requirements test.txt', config_file)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_update_multiline_requirement(monkeypatch, tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('a~=1.0.0 --hash=abc\\\n--hash=abc')
+
+    monkeypatch.setattr(
+        'pkg_resources.get_distribution',
+        lambda package: PkgDistributionFactory(version='2.0.0'))
+    invoke_cli('install a', config_file, True)
+    check_requirements_snapshot(tmpdir, snapshot)
+
+
+def test_install_options_keep_comments(tmpdir, mock_pip, config_file, snapshot):
+    requirements_file = tmpdir.join('requirements.txt')
+    requirements_file.write('--index-url https://index.url # Comment')
+    invoke_cli('install a --index-url https://index.url2', config_file)
     check_requirements_snapshot(tmpdir, snapshot)
