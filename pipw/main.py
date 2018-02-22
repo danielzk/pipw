@@ -17,19 +17,22 @@ PIP_OPTIONS = {
     'find_links': ['-f', '--find-links'],
     'no_index': ['--no-index'],
     'requirements': ['-r', '--requirements'],
+    'install_option': ['--install-option'],
+    'global_option': ['--global-option'],
 }
 
 Package = namedtuple('Package', [
-    'editable', 'name_or_url', 'version', 'installed_version', 'extra',
+    'editable', 'name_or_url', 'version', 'installed_version', 'options',
 ])
 
 
 class Requirements(object):
     patterns = OrderedDict([
         ('editable', '(?P<editable>-e )?'),
-        ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|>=|<=|!=|~=).)+)'),
+        ('name_or_url', '(?P<name_or_url>(?:(?!==|>|<|>=|<=|!=|~=|#|-).)+)'),
         ('version', '(?P<version>(?: *(?:==|>|<|>=|<=|!=|~=) *[^\n ]+)+)?'),
-        ('extra', '(?P<extra>(?: +[#;\-]+[^\n]+)?\n?)'),
+        ('options', '(?P<options>(?: +\-+[^#\n ]+)*\n?)'),
+        ('comment', '(?P<comment>(?: +#[^\n]+)?\n?)'),
     ])
 
     def __init__(self, config, filepath):
@@ -40,11 +43,15 @@ class Requirements(object):
     def parse_package(self, package):
         pattern = '^{}$'.format(''.join(self.patterns.values()))
         match = re.search(pattern, package)
-        editable, name_or_url, version, extra = match.groups()
+        if not match:
+            return None
+
+        editable, name_or_url, version, options, comment = match.groups()
+        options = options.split()
         installed_version = self.get_installed_version(name_or_url)
         package = Package(
             bool(editable), name_or_url.strip(), version, installed_version,
-            extra,
+            options,
         )
         return package
 
@@ -58,8 +65,9 @@ class Requirements(object):
         elif package.installed_version:
             line += self.config['specifier'] + package.installed_version
 
-        if package.extra:
-            line += package.extra
+        if package.options:
+            options = ' '.join(package.options)
+            line += ' {}'.format(options)
 
         return line
 
@@ -74,7 +82,6 @@ class Requirements(object):
             self.read()
 
         for package in packages:
-            package = self.parse_package(package)
             found = self._update_package(package)
             if not found:
                 self._add_package(package)
@@ -97,18 +104,43 @@ class Requirements(object):
                 self._add_option(option, value)
 
     def _update_package(self, package):
-        pattern = '^{}{}{}{}$'.format(
-            self.patterns['editable'],
-            re.escape(package.name_or_url),
-            self.patterns['version'],
-            self.patterns['extra'],
-        )
-        self.buffer, found = re.subn(
-            pattern,
-            '{}\g<extra>'.format(self.make_line(package)),
-            self.buffer,
-            flags=re.MULTILINE,
-        )
+        lines = self.buffer.split('\n')
+
+        found = False
+        for i in range(len(lines)):
+            line = lines[i]
+
+            # Concatenate multiline
+            next_line_index = i + 1
+            while line.endswith('\\'):
+                line += lines[next_line_index]
+                next_line_index += 1
+            line = line.replace('\\', ' ')
+
+            buffer_package = self.parse_package(line)
+            if (not buffer_package or
+                    buffer_package.name_or_url != package.name_or_url):
+                continue
+
+            found = True
+            package.options.extend(buffer_package.options)
+            new_line = self.make_line(package)
+
+            comment_start = ' #'
+            if comment_start in line:
+                pkg, comment = line.split(comment_start, 1)
+                new_line += comment_start + comment
+
+            # Remove multiline
+            line = lines[i]
+            while line.endswith('\\'):
+                line += lines[i + 1]
+                del lines[i + 1]
+
+            lines[i] = new_line
+            break
+
+        self.buffer = '\n'.join(lines)
         return found
 
     def _add_package(self, package):
@@ -151,18 +183,18 @@ class Requirements(object):
         pattern = '^(?:{}){}{}$'.format(
             '|'.join(PIP_OPTIONS[option]),
             value_pattern,
-            self.patterns['extra'],
+            self.patterns['comment'],
         )
         return re.search(pattern, self.buffer, flags=re.MULTILINE)
 
     def _update_option(self, option, value):
         pattern = '^(?P<option>{}) [^ ]+{}$'.format(
             '|'.join(PIP_OPTIONS[option]),
-            self.patterns['extra'],
+            self.patterns['comment'],
         )
         self.buffer, found = re.subn(
             pattern,
-            '\g<option> {}\g<extra>'.format(value),
+            '\g<option> {}\g<comment>'.format(value),
             self.buffer,
             flags=re.MULTILINE,
         )
@@ -269,10 +301,13 @@ def cli(pip_args, save, no_save, config):
     req = Requirements(config, config['requirements'])
 
     packages = []
+    install_options = []
+    global_options = []
     pip_args = iter(pip_args)
     for arg in pip_args:
         if arg in PIP_OPTIONS['editable']:
-            packages.append('-e ' + next(pip_args))
+            line = '-e ' + next(pip_args)
+            packages.append(req.parse_package(line))
         elif arg in PIP_OPTIONS['index_url']:
             url = next(pip_args)
             req.save_option('index_url', url)
@@ -287,14 +322,25 @@ def cli(pip_args, save, no_save, config):
         elif arg in PIP_OPTIONS['requirements']:
             # Skip requirements argument
             next(pip_args)
+        elif arg in PIP_OPTIONS['install_option']:
+            install_options.append(next(pip_args))
+        elif arg in PIP_OPTIONS['global_option']:
+            global_options.append(next(pip_args))
 
         if arg.startswith('-'):
             continue
 
-        packages.append(arg)
+        packages.append(req.parse_package(arg))
 
     if not packages:
         return
+
+    if install_options or global_options:
+        for package in packages:
+            for value in install_options:
+                package.options.append('--install-option=' + value)
+            for value in global_options:
+                package.options.append('--global-option=' + value)
 
     req.save_installed_packages(packages)
     req.write()

@@ -12,7 +12,8 @@ b~=1.0.0
 '''
 
 snapshots['test_install_update_requirements 1'] = '''a~=2.0.0
-b~=2.0.0'''
+b~=2.0.0
+c~=2.0.0'''
 
 snapshots['test_install_add_requirements_alphabetically 1'] = '''a~=1.0.0
 b~=1.0.0
@@ -61,11 +62,12 @@ a
 snapshots['test_install_keep_comments 1'] = '''a~=1.0.0 # Comment
 b~=1.0.0
 # Comment
-c=1.0'''
+c==1.0.0
+d~=1.0.0 --hash=abc # Comment'''
 
-snapshots['test_install_keep_etc 1'] = '''a~=1.0.0 ; --hash=abc
-b~=1.0.0 ; --hash=abc
-c==3.0.0 ; --hash=abc'''
+snapshots['test_install_keep_options 1'] = '''a~=1.0.0 --hash=abc
+b~=1.0.0 --hash=abc --hash=abc
+c==3.0.0 --hash=abc'''
 
 snapshots['test_install_add_requirement_with_specified_version 1'] = '''mylib==3.0.5
 '''
@@ -129,3 +131,18 @@ a~=1.0.0'''
 
 snapshots['test_install_skip_requirements_argument 1'] = '''a~=1.0.0
 '''
+
+snapshots['test_install_update_multiline_requirement 1'] = 'a~=2.0.0 --hash=abc --hash=abc'
+
+snapshots['test_install_options_keep_comments 1'] = '''--index-url https://index.url2 # Comment
+a~=1.0.0'''
+
+snapshots['test_install_add_requirement_with_install_option 1'] = '''a~=1.0.0 --install-option="--override-pip" --install-option="--another"
+'''
+
+snapshots['test_install_update_requirement_with_install_option 1'] = 'a~=1.0.0 --install-option="--another" --install-option="--override-pip"'
+
+snapshots['test_install_add_requirement_with_global_option 1'] = '''a~=1.0.0 --global-option="--override-pip" --global-option="--another"
+'''
+
+snapshots['test_install_update_requirement_with_global_option 1'] = 'a~=1.0.0 --global-option="--another" --global-option="--override-pip"'
