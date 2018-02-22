@@ -53,7 +53,7 @@ Options:
   -n, --no-save        Prevent save packages to the requirements file.
   -c, --config <path>  Pass a custom config file. By default it looks for a
                        .pipwrc file in the directory where the command is
-                       executed.
+                       executed, or in the user's home directory.
   --help               Show this message and exit.
 
 All pip commands and options are still available.

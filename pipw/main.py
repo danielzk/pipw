@@ -281,6 +281,10 @@ def init_config(config_path=None):
     }
 
     filepath = '.pipwrc'
+    if not os.path.exists(filepath):
+        home = os.path.expanduser('~')
+        filepath = os.path.join(home, filepath)
+
     if config_path:
         filepath = config_path
 
@@ -305,7 +309,8 @@ help = {
     'no_save': 'Prevent save packages to the requirements file.',
     'config': (
         'Pass a custom config file. By default it looks for a .pipwrc '
-        'file in the directory where the command is executed.'
+        'file in the directory where the command is executed, or in the '
+        "user's home directory."
     ),
 }
 
