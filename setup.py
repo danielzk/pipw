@@ -1,9 +1,8 @@
-import os
 from os.path import join, dirname
-import subprocess
 from subprocess import Popen, PIPE
 import sys
 
+import pip
 from pip.req import parse_requirements
 from pip.download import PipSession
 from setuptools import setup
@@ -53,7 +52,7 @@ class CustomInstall(install):
     def run(self):
         # Install dependencies in this way due to a bug with --install-option.
         # See <https://github.com/pypa/pip/issues/4338>.
-        subprocess.call(['pip', 'install'] + install_requires)
+        pip.main(['install'] + install_requires)
 
         if self.override_pip:
             console_scripts.append('pip = pipw.main:cli')

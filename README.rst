@@ -24,7 +24,7 @@ You can also pass an option to replace the pip command:
 
 .. code-block::
 
-  $ pip install pipw --install-option="--override-pip"
+  $ pip install pipw --install-option "--override-pip"
 
 If you want to recover the pip command, you just have to reinstall pip. For
 example:
