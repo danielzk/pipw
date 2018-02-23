@@ -12,6 +12,7 @@ wip-tests:
 	tox ${ENV_OPT} -- -m wip
 
 review-tests:
+	pylint pipw || exit 0
 	tox ${ENV_OPT} -- --cov-report term-missing --cov=pipw
 
 upload-coverage:

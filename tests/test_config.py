@@ -53,3 +53,9 @@ def test_config_should_display_error_if_invalid_env(tmpdir, mock_pip, config_fil
     result = invoke_cli('install a --env abc', config_file)
     assert result.exit_code != 0
     snapshot.assert_match(result.output)
+
+
+def test_config_detect_version(tmpdir, mock_pip, snapshot):
+    config = config_file(tmpdir, {'detect_version': 'false'})
+    invoke_cli('install a b==3.2.0', config)
+    check_requirements_snapshot(tmpdir, snapshot)

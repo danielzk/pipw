@@ -46,17 +46,19 @@ Options:
 
 .. code-block::
 
-  -s, --save        Save packages to the requirements file. This is default
-                    unless --no-save. Packages are saved in requirements.txt
-                    unless a custom configuration is used.
-  -n, --no-save     Prevent save packages to the requirements file.
-  --config <path>   Pass a custom config file. By default it looks for a
-                    .pipwrc file in the directory where the command is
-                    executed, or in the user's home directory.
-  -m, --env <name>  Save in a environment previously declared in the config
-                    file.
-  --save-to <path>  Save to a custom file.
-  --help            Show this message and exit.
+  -s, --save           Save packages to the requirements file. This is default
+                       unless --no-save. Packages are saved in
+                       requirements.txt unless a custom configuration is used.
+  -n, --no-save        Prevent save packages to the requirements file.
+  --config <path>      Pass a custom config file. By default it looks for a
+                       .pipwrc file in the directory where the command is
+                       executed, or in the user's home directory.
+  -m, --env <name>     Save in a environment previously declared in the config
+                       file.
+  --save-to <path>     Save to a custom file.
+  --no-detect-version  Do not detect installed version, and save package
+                       version only if the version is passed.
+  --help               Show this message and exit.
 
 All pip commands and options are still available.
 
@@ -74,6 +76,7 @@ Example of a config file:
 
   requirements: requirements.txt
   specifier: ~=
+  detect_version: true
   envs:
       dev: requirements/dev.txt
 
