@@ -20,7 +20,8 @@ Installing
 
   $ pip install pipw
 
-You can also pass an option to replace the pip command:
+You can also pass an option to replace the pip command. This will not work for
+Windows:
 
 .. code-block::
 
