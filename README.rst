@@ -10,8 +10,14 @@ pipw
     :target: https://pypi.python.org/pypi/pipw/
 .. image:: https://img.shields.io/codecov/c/github/danielzk/pipw/master.svg
     :target: https://codecov.io/gh/danielzk/pipw/branch/master
+.. image:: https://img.shields.io/badge/License-MIT-blue.svg
+    :target: https://opensource.org/licenses/MIT
 
 A wrapper for pip to save packages in requirements files similar to npm.
+
+There are better alternatives to pip (like `Pipenv <https://github.com/pypa/pipenv>`_), but this was created for
+those who want or need to continue using pip. For example, if you colaborate
+in projects that use pip requirements files.
 
 Installing
 ==========

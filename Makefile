@@ -6,10 +6,18 @@ ifneq ($(env),)
 endif
 
 tests:
+ifneq ($(ENV_OPT),)
 	tox ${ENV_OPT}
+else
+	pytest -s -vv
+endif
 
 wip-tests:
+ifneq ($(ENV_OPT),)
 	tox ${ENV_OPT} -- -m wip
+else
+	pytest -s -vv -m wip
+endif
 
 review-tests:
 	pylint pipw || exit 0
