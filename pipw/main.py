@@ -21,11 +21,32 @@ PIP_OPTIONS = {
     'global_option': ['--global-option'],
 }
 
+CLI_HELP = {
+    'save': (
+        'Save packages to the requirements file. This is default unless '
+        '--no-save. Packages are saved in requirements.txt unless a custom '
+        'configuration is used.'
+    ),
+    'no_save': 'Prevent save packages to the requirements file.',
+    'config': (
+        'Pass a custom config file. By default it looks for a .pipwrc '
+        'file in the directory where the command is executed, or in the '
+        "user's home directory."
+    ),
+    'env': 'Save in a environment previously declared in the config file.',
+    'save_to': 'Save to a custom file.',
+    'no_detect_version': (
+        'Do not detect installed version, and save package version only if '
+        'the version is passed.'
+    ),
+}
+
 Package = namedtuple('Package', [
     'editable', 'name_or_url', 'version', 'installed_version', 'options',
 ])
 
 
+# pylint: disable=anomalous-backslash-in-string
 class Requirements(object):
     patterns = OrderedDict([
         ('editable', '(?P<editable>-e )?'),
@@ -48,7 +69,11 @@ class Requirements(object):
 
         editable, name_or_url, version, options, comment = match.groups()
         options = options.split()
-        installed_version = self.get_installed_version(name_or_url)
+
+        installed_version = None
+        if self.config['detect_version']:
+            installed_version = self.get_installed_version(name_or_url)
+
         package = Package(
             bool(editable), name_or_url.strip(), version, installed_version,
             options,
@@ -62,7 +87,7 @@ class Requirements(object):
 
         if package.version:
             line += package.version
-        elif package.installed_version:
+        elif self.config['detect_version'] and package.installed_version:
             line += self.config['specifier'] + package.installed_version
 
         if package.options:
@@ -136,7 +161,7 @@ class Requirements(object):
 
             comment_start = ' #'
             if comment_start in line:
-                pkg, comment = line.split(comment_start, 1)
+                comment = line.split(comment_start, 1)[1]
                 new_line += comment_start + comment
 
             # Remove multiline
@@ -276,10 +301,11 @@ class Requirements(object):
             stream.write(self.buffer)
 
 
-def init_config(config_path=None):
+def init_config(config_path=None, json_config=None):
     config = {
         'requirements': 'requirements.txt',
         'specifier': '~=',
+        'detect_version': True,
         'envs': {},
     }
 
@@ -300,40 +326,37 @@ def init_config(config_path=None):
     elif config_path:
         exit('Config file "{}" not found'.format(config_path))
 
+    def is_true(value):
+        return str(value).lower() in ['y', 'yes', 'true', 'on']
+
+    config.update(json_config)
+    config['detect_version'] = is_true(config['detect_version'])
     return config
 
 
-help = {
-    'save': (
-        'Save packages to the requirements file. This is default unless '
-        '--no-save. Packages are saved in requirements.txt unless a custom '
-        'configuration is used.'
-    ),
-    'no_save': 'Prevent save packages to the requirements file.',
-    'config': (
-        'Pass a custom config file. By default it looks for a .pipwrc '
-        'file in the directory where the command is executed, or in the '
-        "user's home directory."
-    ),
-    'env': 'Save in a environment previously declared in the config file.',
-    'save_to': 'Save to a custom file.',
-}
-
+# pylint: disable=no-value-for-parameter
 @click.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument('pip_args', nargs=-1, type=click.UNPROCESSED)
-@click.option('--save', '-s', help=help['save'], is_flag=True)
-@click.option('--no-save', '-n', help=help['no_save'], is_flag=True)
-@click.option('--config', help=help['config'], metavar='<path>')
-@click.option('--env', '-m', help=help['env'], metavar='<name>')
-@click.option('--save-to', help=help['save_to'], metavar='<path>')
-def cli(pip_args, save, no_save, config, env, save_to):
+@click.option('--save', '-s', help=CLI_HELP['save'], is_flag=True)
+@click.option('--no-save', '-n', help=CLI_HELP['no_save'], is_flag=True)
+@click.option('--config', help=CLI_HELP['config'], metavar='<path>')
+@click.option('--env', '-m', help=CLI_HELP['env'], metavar='<name>')
+@click.option('--save-to', help=CLI_HELP['save_to'], metavar='<path>')
+@click.option(
+    '--no-detect-version', default=False, help=CLI_HELP['no_detect_version'],
+    is_flag=True,
+)
+def cli(pip_args, save, no_save, config, env, save_to, no_detect_version):
     if save and no_save:
         exit('--save and --no-save options are mutually exclusive')
 
     if env and save_to:
         exit('--env and --save-to options are mutually exclusive')
 
-    config = init_config(config)
+    json_config = {}
+    if no_detect_version:
+        json_config['detect_version'] = False
+    config = init_config(config, json_config)
 
     requirements_file = config['requirements']
     if env:

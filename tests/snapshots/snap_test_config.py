@@ -25,3 +25,7 @@ b~=1.0.0
 
 snapshots['test_config_should_display_error_if_invalid_env 1'] = '''Environmment "abc" not found
 '''
+
+snapshots['test_config_detect_version 1'] = '''a
+b==3.2.0
+'''
