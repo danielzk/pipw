@@ -1,4 +1,5 @@
 from os.path import join, dirname
+import platform
 from subprocess import Popen, PIPE
 import sys
 
@@ -9,10 +10,11 @@ from setuptools import setup
 from setuptools.command.install import install
 
 current_dir = dirname(__file__)
+is_windows = platform.system() == 'Windows'
 
 reqs_file = join(current_dir, 'requirements', 'common.txt')
 reqs = parse_requirements(reqs_file, session=PipSession())
-install_requires = [str(req.req) for req in reqs]
+reqs = [str(req.req) for req in reqs]
 
 with open(join(current_dir, 'VERSION')) as version_file:
     version = version_file.read().strip()
@@ -52,13 +54,18 @@ class CustomInstall(install):
     def run(self):
         # Install dependencies in this way due to a bug with --install-option.
         # See <https://github.com/pypa/pip/issues/4338>.
-        pip.main(['install'] + install_requires)
+        if not is_windows:
+            pip.main(['install'] + reqs)
 
         if self.override_pip:
             console_scripts.append('pip = pipw.main:cli')
 
         install.run(self)
 
+
+install_requires = []
+if is_windows:
+    install_requires = reqs
 
 setup(
     name='pipw',
@@ -72,6 +79,7 @@ setup(
     packages=['pipw'],
     entry_points = {'console_scripts': console_scripts},
     long_description=long_description,
+    install_requires=install_requires,
     cmdclass={
         'install': CustomInstall,
         'verify': VerifyVersionCommand,
