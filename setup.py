@@ -1,20 +1,17 @@
 from os.path import join, dirname
-import platform
 from subprocess import Popen, PIPE
 import sys
 
-import pip
 from pip.req import parse_requirements
 from pip.download import PipSession
 from setuptools import setup
 from setuptools.command.install import install
 
 current_dir = dirname(__file__)
-is_windows = platform.system() == 'Windows'
 
 reqs_file = join(current_dir, 'requirements', 'common.txt')
 reqs = parse_requirements(reqs_file, session=PipSession())
-reqs = [str(req.req) for req in reqs]
+install_requires = [str(req.req) for req in reqs]
 
 with open(join(current_dir, 'VERSION')) as version_file:
     version = version_file.read().strip()
@@ -42,31 +39,6 @@ class VerifyVersionCommand(install):
             sys.exit(msg)
 
 
-class CustomInstall(install):
-    user_options = install.user_options + [
-        ('override-pip', 'o', 'Override pip command'),
-    ]
-
-    def initialize_options(self):
-        install.initialize_options(self)
-        self.override_pip = None
-
-    def run(self):
-        # Install dependencies in this way due to a bug with --install-option.
-        # See <https://github.com/pypa/pip/issues/4338>.
-        if not is_windows:
-            pip.main(['install'] + reqs)
-
-        if self.override_pip:
-            console_scripts.append('pip = pipw.main:cli')
-
-        install.run(self)
-
-
-install_requires = []
-if is_windows:
-    install_requires = reqs
-
 setup(
     name='pipw',
     version=version,
@@ -81,7 +53,6 @@ setup(
     long_description=long_description,
     install_requires=install_requires,
     cmdclass={
-        'install': CustomInstall,
         'verify': VerifyVersionCommand,
     },
     classifiers=[
