@@ -17,21 +17,6 @@ Installing
 
   $ pip install pipw
 
-You can also pass an option to replace the pip command. This will not work for
-Windows:
-
-.. code-block::
-
-  $ pip install pipw --install-option "--override-pip"
-
-If you want to recover the pip command, you just have to reinstall pip. For
-example:
-
-.. code-block::
-
-  $ pip uninstall pip
-  $ easy_install pip
-
 Usage
 ==========
 
